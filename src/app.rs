@@ -1,6 +1,9 @@
 use crate::printer;
 use clap::{value_t, ArgMatches};
-use crossterm::{terminal, Terminal};
+#[cfg(not(target_os = "wasi"))]
+use crossterm::Terminal;
+#[cfg(target_os = "wasi")]
+use std::env;
 use gif::SetParameter;
 use image::{DynamicImage, GenericImageView, ImageBuffer, ImageRgba8};
 use std::fs;
@@ -18,6 +21,7 @@ pub struct Config<'a> {
     recursive: bool,
     width: Option<u32>,
     height: Option<u32>,
+    #[cfg(not(target_os = "wasi"))]
     terminal: Terminal,
 }
 
@@ -39,6 +43,7 @@ impl<'a> Config<'a> {
             Some(values) => values.collect(),
         };
 
+        #[cfg(not(target_os = "wasi"))]
         let terminal = terminal();
         let once = matches.is_present("once");
         let loop_gif = files.len() <= 1 && !once;
@@ -53,6 +58,7 @@ impl<'a> Config<'a> {
             recursive: matches.is_present("recursive"),
             width,
             height,
+            #[cfg(not(target_os = "wasi"))]
             terminal,
         }
     }
@@ -276,9 +282,17 @@ fn resize(conf: &Config, is_not_gif: bool, img: &DynamicImage) -> DynamicImage {
                 "Neither width, nor height is specified, therefore terminal size will be matched"
             );
             }
-
+            #[cfg(not(target_os = "wasi"))]
+            let termsize = conf.terminal.size();
+            
+            #[cfg(target_os = "wasi")]
+            let termsize = match (env::var("COLUMNS"), env::var("LINES")) {
+                (Ok(cols), Ok(lines)) => Ok((cols.parse::<u32>().unwrap(), lines.parse::<u32>().unwrap())),
+                _ => Err("Can't get the size")
+            };
+            
             let size;
-            match conf.terminal.size() {
+            match termsize {
                 Ok(s) => {
                     size = s;
                 }
