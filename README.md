@@ -36,13 +36,13 @@ cargo install viu
 First, you will need the WASI target installed in your Rust system:
 
 ```bash
-rustup target add wasm32-wasi --toolchain nightly
+rustup target add wasm32-wasi
 ```
 
 Once WASI is available, you can build the WebAssembly binary by yourself with:
 
 ```bash
-cargo +nightly build --release --target wasm32-wasi
+cargo build --release --target wasm32-wasi
 ```
 
 This will create a new file located at `target/wasm32-wasi/release/viu.wasm`.
